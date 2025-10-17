@@ -2,18 +2,13 @@
 
 ## 🧭 Navigation
 
-**📍 You are here:** DATA_STRUCTURES_GUIDE (Data Organization)
+**You are here:** DATA_STRUCTURES_GUIDE
 
-**📚 Other Documents:**
-- 🏠 [README](../../README.md) - Project overview
-- 🚀 [QUICK_START](../QUICK_START/readme.md) - Get started in 5 minutes
-- 📚 [DOCUMENTATION_INDEX](../DOCUMENTATION_INDEX/readme.md) - Complete reading guide
-- 📘 [PROJECT_DOCUMENTATION](../PROJECT_DOCUMENTATION/readme.md) - Full specifications
-- 🏗️ [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md) - Technical architecture
-- 💻 [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md) - Code reference
-- 📝 [PROJECT_SUMMARY](../PROJECT_SUMMARY/readme.md) - Quick reference
-
-**Recommended Next:** 💻 [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md)
+**Other Documents:**
+- [README](../../README.md)
+- [PROJECT_DOCUMENTATION](../PROJECT_DOCUMENTATION/readme.md)
+- [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md)
+- [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md)
 
 ---
 
@@ -486,15 +481,15 @@ for(int i = 0; i < count; i++) {
 
 ## 🧭 Navigation
 
-**Next Recommended:**
-- 💻 [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md) - See complete code reference
-- 📝 [PROJECT_SUMMARY](../PROJECT_SUMMARY/readme.md) - Quick reference guide
+**Other Documents:**
+- [README](../../README.md)
+- [PROJECT_DOCUMENTATION](../PROJECT_DOCUMENTATION/readme.md)
+- [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md)
+- [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md)
 
-**Back to:**
-- 🏠 [Main README](../../README.md)
-- 🏗️ [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md)
-- [Top of this page](#data-structures-reference-guide)
+[Back to top](#data-structures-reference-guide)
 
 ---
 
 END OF DATA STRUCTURES REFERENCE GUIDE
+

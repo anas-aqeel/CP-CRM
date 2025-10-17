@@ -2,18 +2,13 @@
 
 ## 🧭 Navigation
 
-**📍 You are here:** SYSTEM_ARCHITECTURE (Technical Design)
+**You are here:** SYSTEM_ARCHITECTURE
 
-**📚 Other Documents:**
-- 🏠 [README](../../README.md) - Project overview
-- 🚀 [QUICK_START](../QUICK_START/readme.md) - Get started in 5 minutes
-- 📚 [DOCUMENTATION_INDEX](../DOCUMENTATION_INDEX/readme.md) - Complete reading guide
-- 📘 [PROJECT_DOCUMENTATION](../PROJECT_DOCUMENTATION/readme.md) - Full specifications
-- 📊 [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md) - Data organization
-- 💻 [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md) - Code reference
-- 📝 [PROJECT_SUMMARY](../PROJECT_SUMMARY/readme.md) - Quick reference
-
-**Recommended Next:** 📊 [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md)
+**Other Documents:**
+- [README](../../README.md)
+- [PROJECT_DOCUMENTATION](../PROJECT_DOCUMENTATION/readme.md)
+- [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md)
+- [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md)
 
 ---
 
@@ -374,15 +369,15 @@ All members test the complete system together.
 
 ## 🧭 Navigation
 
-**Next Recommended:**
-- 📊 [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md) - See detailed data structures
-- 💻 [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md) - Reference code
+**Other Documents:**
+- [README](../../README.md)
+- [PROJECT_DOCUMENTATION](../PROJECT_DOCUMENTATION/readme.md)
+- [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md)
+- [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md)
 
-**Back to:**
-- 🏠 [Main README](../../README.md)
-- 📘 [PROJECT_DOCUMENTATION](../PROJECT_DOCUMENTATION/readme.md)
-- [Top of this page](#restaurant-management-system---system-architecture)
+[Back to top](#restaurant-management-system---system-architecture)
 
 ---
 
 END OF ARCHITECTURE DOCUMENT
+

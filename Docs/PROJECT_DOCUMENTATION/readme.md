@@ -2,18 +2,13 @@
 
 ## 🧭 Navigation
 
-**📍 You are here:** PROJECT_DOCUMENTATION (Full Specifications)
+**You are here:** PROJECT_DOCUMENTATION
 
-**📚 Other Documents:**
-- 🏠 [README](../../README.md) - Project overview
-- 🚀 [QUICK_START](../QUICK_START/readme.md) - Get started in 5 minutes
-- 📚 [DOCUMENTATION_INDEX](../DOCUMENTATION_INDEX/readme.md) - Complete reading guide
-- 🏗️ [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md) - Technical architecture
-- 📊 [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md) - Data organization
-- 💻 [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md) - Code reference
-- 📝 [PROJECT_SUMMARY](../PROJECT_SUMMARY/readme.md) - Quick reference
-
-**Recommended Next:** 🏗️ [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md)
+**Other Documents:**
+- [README](../../README.md)
+- [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md)
+- [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md)
+- [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md)
 
 ---
 
@@ -537,6 +532,24 @@ Estimated wait time: 20 minutes
 
 ---
 
+## 🧭 Navigation
+
+**Other Documents:**
+- [README](../../README.md)
+- [SYSTEM_ARCHITECTURE](../SYSTEM_ARCHITECTURE/readme.md)
+- [DATA_STRUCTURES_GUIDE](../DATA_STRUCTURES_GUIDE/readme.md)
+- [SAMPLE_CODE_STRUCTURE](../SAMPLE_CODE_STRUCTURE/readme.md)
+
+[Back to top](#restaurant-management-system-rms---project-documentation)
+
+---
+
+## END OF DOCUMENTATION
+
+```
+
+---
+
 
 ## 🧭 Navigation
 
@@ -546,8 +559,7 @@ Estimated wait time: 20 minutes
 
 **Back to:**
 - 🏠 [Main README](../../README.md)
-- 🚀 [QUICK_START](../QUICK_START/readme.md)
-- [Top of this page](#restaurant-management-system-rms---project-documentation)
+(#restaurant-management-system-rms---project-documentation)
 
 ---
 
