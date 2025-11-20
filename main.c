@@ -1,989 +1,882 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
-#define MAX_LINE_LEN 256
-#define MAX_FIELD_LEN 64
-#define MAX_FIELDS 8
+#define MAX_MENU 50
+#define MAX_ORDERS 50
+#define MAX_FEEDBACK 50
+#define MAX_LEN 64
+#define ADMIN_PASSWORD "admin123"
 
-#define MENU_FILE "data/menu.csv"
-#define ORDERS_FILE "data/orders.csv"
-#define FEEDBACK_FILE "data/feedback.csv"
-#define FINANCIAL_FILE "data/financial.csv"
+// ========== STRUCTURES ==========
+struct MenuItem
+{
+    int id;
+    char name[MAX_LEN];
+    char category[MAX_LEN];
+    int price;
+};
 
-#define MAX_MENU_ITEMS 100
-#define MAX_ORDERS 200
-#define MAX_FEEDBACK 200
+struct Order
+{
+    int id;
+    int item_id;
+    int qty;
+    char status[MAX_LEN];
+    char customer[MAX_LEN];
+    int total;
+};
 
-static void admin_view(void);
-static void client_view(void);
-
-typedef struct {
-    char id[16];
-    char name[64];
-    char category[32];
-    int price_cents;
-} MenuItem;
-
-typedef struct {
-    char id[16];
-    char item_id[16];
-    int quantity;
-    char status[16];
-    char customer[64];
-    int total_cents;
-} OrderRecord;
-
-typedef struct {
-    char id[16];
-    char item_id[16];
+struct Feedback
+{
+    int id;
+    int item_id;
     int rating;
-    char comment[128];
-} FeedbackRecord;
+    char comment[MAX_LEN];
+};
 
-static void trim_newline(char *text);
-static void safe_input(char *buffer, size_t size);
-static int parse_int(const char *text, int *result);
-static void generate_id(const char *prefix, int number, char *out, size_t size);
-static int ensure_data_file(const char *filename, const char *header_line);
-static int read_csv_lines(const char *filename, char lines[][MAX_LINE_LEN], int max_lines);
-static int write_csv_lines(const char *filename, char lines[][MAX_LINE_LEN], int line_count);
-static int append_csv_line(const char *filename, const char *line);
-static int parse_csv_fields(const char *line, char fields[][MAX_FIELD_LEN], int max_fields);
-static void initialize_data_files(void);
+// ========== GLOBAL DATA ==========
+struct MenuItem menu[MAX_MENU];
+int menu_count = 0;
 
-static void pause_and_wait(void);
-static int load_menu_items(MenuItem *items, int *count);
-static int save_menu_items(const MenuItem *items, int count);
-static void print_menu_items(const MenuItem *items, int count);
-static int find_menu_index_by_id(const MenuItem *items, int count, const char *id);
+struct Order orders[MAX_ORDERS];
+int order_count = 0;
 
-static int load_orders(OrderRecord *orders, int *count);
-static int save_orders(const OrderRecord *orders, int count);
-static void print_orders(const OrderRecord *orders, int count);
-static int find_order_index_by_id(const OrderRecord *orders, int count, const char *id);
+struct Feedback feedbacks[MAX_FEEDBACK];
+int feedback_count = 0;
 
-static int load_feedback(FeedbackRecord *entries, int *count);
-static void print_feedback(const FeedbackRecord *entries, int count);
-static void update_financials_on_completion(const OrderRecord *order);
+int financial_total = 0;
 
-static int next_identifier_from_lines(const char *filename);
-static void collect_price_input(int *price_cents);
-static void collect_quantity_input(int *quantity);
-static int confirm_choice(const char *message);
+// ========== UTILITY FUNCTIONS ==========
+void clearInputBuffer()
+{
 
-static void admin_manage_menu(void);
-static void admin_manage_orders(void);
-static void admin_view_financials(void);
-static void admin_view_feedback(void);
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
 
-static void client_view_menu(void);
-static void client_place_order(void);
-static void client_track_order(void);
-static void client_update_order_status(void);
-static void client_leave_feedback(void);
+// Simple fgets wrapper - reads input and removes newline
+void getInput(char *buffer, int size)
+{
+    fgets(buffer, size, stdin);
+    buffer[strcspn(buffer, "\n")] = 0; // Remove newline character
+}
 
-static void trim_newline(char *text) {
-    if (text == NULL) {
+// ========================================================================
+// MEMBER 1 (ANAS): MENU & INVENTORY MODULE
+// ========================================================================
+
+// Display main menu
+void printMainMenu()
+{
+    printf("\n========================================\n");
+    printf("   CP-RMS: RESTAURANT MANAGEMENT SYSTEM\n");
+    printf("========================================\n");
+    printf("1. Admin Panel\n");
+    printf("2. Client Panel\n");
+    printf("0. Exit\n");
+    printf("========================================\n");
+    printf("Enter your choice: ");
+}
+
+// Display admin menu
+void printAdminMenu()
+{
+    printf("\n========================================\n");
+    printf("           ADMIN PANEL\n");
+    printf("========================================\n");
+    printf("1. View Menu Items\n");
+    printf("2. Add New Menu Item\n");
+    printf("3. View All Orders\n");
+    printf("4. Update Order Status\n");
+    printf("5. View Financial Report\n");
+    printf("6. View Customer Feedback\n");
+    printf("0. Back to Main Menu\n");
+    printf("========================================\n");
+    printf("Enter your choice: ");
+}
+
+// Display client menu
+void printClientMenu()
+{
+    printf("\n========================================\n");
+    printf("           CLIENT PANEL\n");
+    printf("========================================\n");
+    printf("1. View Menu\n");
+    printf("2. Place Order\n");
+    printf("3. Track My Order\n");
+    printf("4. Update My Order\n");
+    printf("5. Give Feedback\n");
+    printf("0. Back to Main Menu\n");
+    printf("========================================\n");
+    printf("Enter your choice: ");
+}
+
+// View all menu items
+void viewMenu()
+{
+    if (menu_count == 0)
+    {
+        printf("\n[!] No menu items available.\n");
         return;
     }
 
-    size_t len = strlen(text);
-    while (len > 0 && (text[len - 1] == '\n' || text[len - 1] == '\r')) {
-        text[len - 1] = '\0';
-        len--;
+    printf("\n========================================\n");
+    printf("           MENU ITEMS\n");
+    printf("========================================\n");
+    printf("%-5s %-20s %-15s %-10s\n", "ID", "Name", "Category", "Price");
+    printf("----------------------------------------\n");
+
+    for (int i = 0; i < menu_count; i++)
+    {
+        printf("%-5d %-20s %-15s Rs.%-7d\n",
+               menu[i].id,
+               menu[i].name,
+               menu[i].category,
+               menu[i].price);
     }
+    printf("========================================\n");
 }
 
-static void safe_input(char *buffer, size_t size) {
-    if (fgets(buffer, (int)size, stdin) == NULL) {
-        if (size > 0) {
-            buffer[0] = '\0';
-        }
-        return;
-    }
-    trim_newline(buffer);
-}
-
-static int parse_int(const char *text, int *result) {
-    if (text == NULL || result == NULL) {
-        return -1;
-    }
-
-    char *end_ptr = NULL;
-    long value = strtol(text, &end_ptr, 10);
-    if (end_ptr == text || *end_ptr != '\0') {
-        return -1;
-    }
-
-    *result = (int)value;
-    return 0;
-}
-
-static void generate_id(const char *prefix, int number, char *out, size_t size) {
-    if (out == NULL || size == 0) {
+// Add new menu item
+void addMenuItem()
+{
+    if (menu_count >= MAX_MENU)
+    {
+        printf("\n[!] Menu is full. Cannot add more items.\n");
         return;
     }
 
-    snprintf(out, size, "%s%03d", prefix, number);
+    char name[MAX_LEN];
+    char category[MAX_LEN];
+    int price;
+
+    printf("\n--- Add New Menu Item ---\n");
+
+    printf("Enter item name: ");
+    clearInputBuffer();
+    getInput(name, MAX_LEN); // fgets to allow spaces in names
+
+    printf("Enter category: ");
+    getInput(category, MAX_LEN);
+
+    printf("Enter price (Rs): ");
+    scanf("%d", &price);
+
+    // Validate price
+    if (price <= 0)
+    {
+        printf("[!] Invalid price. Please enter a positive value.\n");
+        return;
+    }
+
+    // Add item to menu
+    menu[menu_count].id = menu_count + 1;
+    strcpy(menu[menu_count].name, name);
+    strcpy(menu[menu_count].category, category);
+    menu[menu_count].price = price;
+
+    menu_count++;
+
+    printf("[✓] Menu item added successfully! Item ID: %d\n", menu_count);
 }
 
-static int ensure_data_file(const char *filename, const char *header_line) {
-    FILE *file = fopen(filename, "r");
-    if (file != NULL) {
-        fclose(file);
-        return 0;
+// Save menu to file
+void saveMenuToFile()
+{
+    FILE *file = fopen("menu.txt", "w");
+    if (file == NULL)
+    {
+        return; // Silently fail if file can't be opened
     }
 
-    file = fopen(filename, "w");
-    if (file == NULL) {
-        return -1;
-    }
-
-    if (header_line != NULL && header_line[0] != '\0') {
-        fprintf(file, "%s\n", header_line);
+    fprintf(file, "%d\n", menu_count);
+    for (int i = 0; i < menu_count; i++)
+    {
+        fprintf(file, "%d|%s|%s|%d\n",
+                menu[i].id, menu[i].name, menu[i].category, menu[i].price);
     }
 
     fclose(file);
-    return 0;
 }
 
-static int read_csv_lines(const char *filename, char lines[][MAX_LINE_LEN], int max_lines) {
-    FILE *file = fopen(filename, "r");
-    if (file == NULL) {
-        return -1;
+// Load menu from file
+void loadMenuFromFile()
+{
+    FILE *file = fopen("menu.txt", "r");
+    if (file == NULL)
+    {
+        return; // No file exists yet
     }
 
-    int count = 0;
-    while (count < max_lines && fgets(lines[count], MAX_LINE_LEN, file) != NULL) {
-        trim_newline(lines[count]);
-        count++;
+    fscanf(file, "%d\n", &menu_count);
+    for (int i = 0; i < menu_count; i++)
+    {
+        fscanf(file, "%d|%[^|]|%[^|]|%d\n",
+               &menu[i].id, menu[i].name, menu[i].category, &menu[i].price);
     }
 
     fclose(file);
-    return count;
 }
 
-static int write_csv_lines(const char *filename, char lines[][MAX_LINE_LEN], int line_count) {
-    FILE *file = fopen(filename, "w");
-    if (file == NULL) {
-        return -1;
+// ========================================================================
+// MEMBER 2 (NOMAN): ORDERS MODULE
+// ========================================================================
+
+// View all orders (Admin)
+void viewAllOrders()
+{
+    if (order_count == 0)
+    {
+        printf("\n[!] No orders placed yet.\n");
+        return;
     }
 
-    for (int i = 0; i < line_count; ++i) {
-        fprintf(file, "%s\n", lines[i]);
+    printf("\n========================================\n");
+    printf("           ALL ORDERS\n");
+    printf("========================================\n");
+    printf("%-5s %-10s %-5s %-12s %-15s %-10s\n",
+           "ID", "Item ID", "Qty", "Status", "Customer", "Total");
+    printf("----------------------------------------\n");
+
+    for (int i = 0; i < order_count; i++)
+    {
+        printf("%-5d %-10d %-5d %-12s %-15s Rs.%-7d\n",
+               orders[i].id,
+               orders[i].item_id,
+               orders[i].qty,
+               orders[i].status,
+               orders[i].customer,
+               orders[i].total);
+    }
+    printf("========================================\n");
+}
+
+// Find menu item by ID
+int findMenuItem(int item_id)
+{
+    for (int i = 0; i < menu_count; i++)
+    {
+        if (menu[i].id == item_id)
+        {
+            return i; // Return index
+        }
+    }
+    return -1; // Not found
+}
+
+// Place new order (Client)
+void placeOrder()
+{
+    if (order_count >= MAX_ORDERS)
+    {
+        printf("\n[!] Order limit reached. Cannot place more orders.\n");
+        return;
+    }
+
+    if (menu_count == 0)
+    {
+        printf("\n[!] No menu items available. Cannot place order.\n");
+        return;
+    }
+
+    int item_id, qty;
+    char customer[MAX_LEN];
+
+    printf("\n--- Place Your Order ---\n");
+
+    printf("Enter Item ID: ");
+    scanf("%d", &item_id);
+
+    int index = findMenuItem(item_id);
+    if (index == -1)
+    {
+        printf("[!] Invalid Item ID. Please check the menu.\n");
+        return;
+    }
+
+    printf("Enter Quantity: ");
+    scanf("%d", &qty);
+
+    // Validate quantity
+    if (qty <= 0)
+    {
+        printf("[!] Invalid quantity. Please enter a positive number.\n");
+        return;
+    }
+
+    printf("Enter Customer Name: ");
+    clearInputBuffer();
+    getInput(customer, MAX_LEN); // fgets to allow spaces in names
+
+    // Create order
+    orders[order_count].id = order_count + 1;
+    orders[order_count].item_id = item_id;
+    orders[order_count].qty = qty;
+    strcpy(orders[order_count].customer, customer);
+    strcpy(orders[order_count].status, "Pending");
+    orders[order_count].total = menu[index].price * qty;
+
+    printf("\n[✓] Order placed successfully!\n");
+    printf("    Order ID: %d\n", orders[order_count].id);
+    printf("    Total Amount: Rs.%d\n", orders[order_count].total);
+
+    order_count++;
+}
+
+// Track order status (Client)
+void trackOrder()
+{
+    if (order_count == 0)
+    {
+        printf("\n[!] No orders placed yet.\n");
+        return;
+    }
+
+    int order_id;
+
+    printf("\n--- Track Your Order ---\n");
+    printf("Enter Order ID: ");
+    scanf("%d", &order_id);
+
+    int found = 0;
+    for (int i = 0; i < order_count; i++)
+    {
+        if (orders[i].id == order_id)
+        {
+            printf("\n========================================\n");
+            printf("Order ID: %d\n", orders[i].id);
+            printf("Customer: %s\n", orders[i].customer);
+            printf("Item ID: %d\n", orders[i].item_id);
+            printf("Quantity: %d\n", orders[i].qty);
+            printf("Total: Rs.%d\n", orders[i].total);
+            printf("Status: %s\n", orders[i].status);
+            printf("========================================\n");
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        printf("[!] Order not found. Please check your Order ID.\n");
+    }
+}
+
+// Update order status (Admin)
+void updateOrderStatus()
+{
+    if (order_count == 0)
+    {
+        printf("\n[!] No orders available to update.\n");
+        return;
+    }
+
+    int order_id;
+    char status[MAX_LEN];
+
+    printf("\n--- Update Order Status ---\n");
+    printf("Enter Order ID: ");
+    scanf("%d", &order_id);
+
+    int found = 0;
+    for (int i = 0; i < order_count; i++)
+    {
+        if (orders[i].id == order_id)
+        {
+            printf("Current Status: %s\n", orders[i].status);
+            printf("Enter New Status (Pending/Preparing/Completed/Cancelled): ");
+            clearInputBuffer();
+            getInput(status, MAX_LEN);
+
+            strcpy(orders[i].status, status);
+
+            // Update financial if completed
+            if (strcmp(status, "Completed") == 0)
+            {
+                financial_total += orders[i].total;
+            }
+
+            printf("[✓] Order status updated successfully!\n");
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        printf("[!] Order not found. Please check the Order ID.\n");
+    }
+}
+
+// Update order by client
+void clientUpdateOrder()
+{
+    if (order_count == 0)
+    {
+        printf("\n[!] No orders available to update.\n");
+        return;
+    }
+
+    int order_id, action;
+
+    printf("\n--- Update Your Order ---\n");
+    printf("Enter Order ID: ");
+    scanf("%d", &order_id);
+
+    int found = 0;
+    for (int i = 0; i < order_count; i++)
+    {
+        if (orders[i].id == order_id)
+        {
+            printf("Current Status: %s\n", orders[i].status);
+            printf("\n1. Mark as Completed\n");
+            printf("2. Cancel Order\n");
+            printf("Enter action: ");
+            scanf("%d", &action);
+
+            if (action == 1)
+            {
+                strcpy(orders[i].status, "Completed");
+                financial_total += orders[i].total;
+                printf("[✓] Order marked as completed!\n");
+            }
+            else if (action == 2)
+            {
+                strcpy(orders[i].status, "Cancelled");
+                printf("[✓] Order cancelled successfully!\n");
+            }
+            else
+            {
+                printf("[!] Invalid action.\n");
+            }
+
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        printf("[!] Order not found. Please check your Order ID.\n");
+    }
+}
+
+// Save orders to file
+void saveOrdersToFile()
+{
+    FILE *file = fopen("orders.txt", "w");
+    if (file == NULL)
+    {
+        return;
+    }
+
+    fprintf(file, "%d\n", order_count);
+    for (int i = 0; i < order_count; i++)
+    {
+        fprintf(file, "%d|%d|%d|%s|%s|%d\n",
+                orders[i].id, orders[i].item_id, orders[i].qty,
+                orders[i].status, orders[i].customer, orders[i].total);
     }
 
     fclose(file);
-    return 0;
 }
 
-static int append_csv_line(const char *filename, const char *line) {
-    FILE *file = fopen(filename, "a");
-    if (file == NULL) {
-        return -1;
+// Load orders from file
+void loadOrdersFromFile()
+{
+    FILE *file = fopen("orders.txt", "r");
+    if (file == NULL)
+    {
+        return;
     }
 
-    fprintf(file, "%s\n", line);
+    fscanf(file, "%d\n", &order_count);
+    for (int i = 0; i < order_count; i++)
+    {
+        fscanf(file, "%d|%d|%d|%[^|]|%[^|]|%d\n",
+               &orders[i].id, &orders[i].item_id, &orders[i].qty,
+               orders[i].status, orders[i].customer, &orders[i].total);
+    }
+
     fclose(file);
-    return 0;
 }
 
-static int parse_csv_fields(const char *line, char fields[][MAX_FIELD_LEN], int max_fields) {
-    if (line == NULL || fields == NULL || max_fields <= 0) {
-        return 0;
-    }
+// ========================================================================
+// MEMBER 3 (ALI): FEEDBACK & FINANCIALS MODULE
+// ========================================================================
 
-    int field_index = 0;
-    int field_pos = 0;
-    int in_quote = 0;
-
-    for (int i = 0; line[i] != '\0'; ++i) {
-        char ch = line[i];
-
-        if (ch == '"') {
-            in_quote = !in_quote;
-            continue;
-        }
-
-        if (ch == ',' && !in_quote) {
-            fields[field_index][field_pos] = '\0';
-            field_index++;
-            if (field_index >= max_fields) {
-                return field_index;
-            }
-            field_pos = 0;
-            continue;
-        }
-
-        if (field_pos < MAX_FIELD_LEN - 1) {
-            fields[field_index][field_pos] = ch;
-            field_pos++;
-        }
-    }
-
-    fields[field_index][field_pos] = '\0';
-    return field_index + 1;
-}
-
-static void initialize_data_files(void) {
-    ensure_data_file(MENU_FILE, "MenuID,Name,Category,PriceUnits");
-    ensure_data_file(ORDERS_FILE, "OrderID,ItemID,Quantity,Status,Customer,TotalUnits");
-    ensure_data_file(FEEDBACK_FILE, "FeedbackID,ItemID,Rating,Comment");
-    ensure_data_file(FINANCIAL_FILE, "EntryID,OrderID,AmountUnits");
-}
-
-static void admin_manage_menu(void) {
-    char input[16];
-    for (;;) {
-        printf("\n--- Menu Management ---\n");
-        printf("1. View Menu\n");
-        printf("2. Add Menu Item\n");
-        printf("3. Edit Menu Item\n");
-        printf("4. Delete Menu Item\n");
-        printf("0. Back\n");
-        printf("Choose an option: ");
-        safe_input(input, sizeof(input));
-
-        int choice = 0;
-        if (parse_int(input, &choice) != 0) {
-            printf("Invalid selection.\n");
-            continue;
-        }
-
-        if (choice == 0) {
-            return;
-        }
-
-        if (choice == 1) {
-            MenuItem items[MAX_MENU_ITEMS];
-            int count = 0;
-            if (load_menu_items(items, &count) == 0) {
-                print_menu_items(items, count);
-            } else {
-                printf("Unable to load menu items.\n");
-            }
-            pause_and_wait();
-        } else if (choice == 2) {
-            MenuItem items[MAX_MENU_ITEMS];
-            int count = 0;
-            if (load_menu_items(items, &count) != 0) {
-                printf("Unable to load menu items.\n");
-                pause_and_wait();
-                continue;
-            }
-            if (count >= MAX_MENU_ITEMS) {
-                printf("Menu is full.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            MenuItem item;
-            generate_id("M", count + 1, item.id, sizeof(item.id));
-            printf("Enter item name: ");
-            safe_input(item.name, sizeof(item.name));
-            printf("Enter category: ");
-            safe_input(item.category, sizeof(item.category));
-            collect_price_input(&item.price_cents);
-
-            items[count] = item;
-            if (save_menu_items(items, count + 1) == 0) {
-                printf("Menu item added successfully.\n");
-            } else {
-                printf("Failed to save menu item.\n");
-            }
-            pause_and_wait();
-        } else if (choice == 3) {
-            MenuItem items[MAX_MENU_ITEMS];
-            int count = 0;
-            if (load_menu_items(items, &count) != 0) {
-                printf("Unable to load menu items.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            printf("Enter item ID to edit: ");
-            char id[16];
-            safe_input(id, sizeof(id));
-            int index = find_menu_index_by_id(items, count, id);
-            if (index < 0) {
-                printf("Item not found.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            printf("Editing %s - %s\n", items[index].id, items[index].name);
-            printf("Enter new name (leave blank to keep current): ");
-            char buffer[64];
-            safe_input(buffer, sizeof(buffer));
-            if (strlen(buffer) > 0) {
-                strncpy(items[index].name, buffer, sizeof(items[index].name) - 1);
-                items[index].name[sizeof(items[index].name) - 1] = '\0';
-            }
-            printf("Enter new category (leave blank to keep current): ");
-            safe_input(buffer, sizeof(buffer));
-            if (strlen(buffer) > 0) {
-                strncpy(items[index].category, buffer, sizeof(items[index].category) - 1);
-                items[index].category[sizeof(items[index].category) - 1] = '\0';
-            }
-            printf("Update price? (y/n): ");
-            safe_input(buffer, sizeof(buffer));
-            if (buffer[0] == 'y' || buffer[0] == 'Y') {
-                collect_price_input(&items[index].price_cents);
-            }
-
-            if (save_menu_items(items, count) == 0) {
-                printf("Menu item updated.\n");
-            } else {
-                printf("Failed to update menu.\n");
-            }
-            pause_and_wait();
-        } else if (choice == 4) {
-            MenuItem items[MAX_MENU_ITEMS];
-            int count = 0;
-            if (load_menu_items(items, &count) != 0) {
-                printf("Unable to load menu items.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            printf("Enter item ID to delete: ");
-            char id[16];
-            safe_input(id, sizeof(id));
-            int index = find_menu_index_by_id(items, count, id);
-            if (index < 0) {
-                printf("Item not found.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            if (!confirm_choice("Are you sure you want to delete this item? (y/n): ")) {
-                printf("Deletion cancelled.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            for (int i = index; i < count - 1; ++i) {
-                items[i] = items[i + 1];
-            }
-
-            if (save_menu_items(items, count - 1) == 0) {
-                printf("Menu item deleted.\n");
-            } else {
-                printf("Failed to delete menu item.\n");
-            }
-            pause_and_wait();
-        } else {
-            printf("Unknown option.\n");
-        }
-    }
-}
-
-static void admin_manage_orders(void) {
-    char input[16];
-    for (;;) {
-        printf("\n--- Order Management ---\n");
-        printf("1. View All Orders\n");
-        printf("2. Update Order Status\n");
-        printf("0. Back\n");
-        printf("Choose an option: ");
-        safe_input(input, sizeof(input));
-        int choice = 0;
-        if (parse_int(input, &choice) != 0) {
-            printf("Invalid selection.\n");
-            continue;
-        }
-
-        if (choice == 0) {
-            return;
-        }
-
-        if (choice == 1) {
-            OrderRecord orders[MAX_ORDERS];
-            int count = 0;
-            if (load_orders(orders, &count) == 0) {
-                print_orders(orders, count);
-            } else {
-                printf("Unable to load orders.\n");
-            }
-            pause_and_wait();
-        } else if (choice == 2) {
-            OrderRecord orders[MAX_ORDERS];
-            int count = 0;
-            if (load_orders(orders, &count) != 0) {
-                printf("Unable to load orders.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            printf("Enter order ID: ");
-            char id[16];
-            safe_input(id, sizeof(id));
-            int index = find_order_index_by_id(orders, count, id);
-            if (index < 0) {
-                printf("Order not found.\n");
-                pause_and_wait();
-                continue;
-            }
-
-            printf("Current status: %s\n", orders[index].status);
-            printf("Enter new status (Pending/InProgress/Completed/Cancelled): ");
-            char status[16];
-            safe_input(status, sizeof(status));
-            if (strlen(status) == 0) {
-                printf("Status unchanged.\n");
-                pause_and_wait();
-                continue;
-            }
-            strncpy(orders[index].status, status, sizeof(orders[index].status) - 1);
-            orders[index].status[sizeof(orders[index].status) - 1] = '\0';
-
-            if (strcmp(status, "Completed") == 0) {
-                update_financials_on_completion(&orders[index]);
-            }
-
-            if (save_orders(orders, count) == 0) {
-                printf("Order status updated.\n");
-            } else {
-                printf("Failed to update order.\n");
-            }
-            pause_and_wait();
-        } else {
-            printf("Unknown option.\n");
-        }
-    }
-}
-
-static void admin_view_financials(void) {
-    char lines[256][MAX_LINE_LEN];
-    int count = read_csv_lines(FINANCIAL_FILE, lines, 256);
-    if (count < 1) {
-        printf("No financial records available.\n");
-        pause_and_wait();
+// View all feedback (Admin)
+void viewAllFeedback()
+{
+    if (feedback_count == 0)
+    {
+        printf("\n[!] No feedback available.\n");
         return;
     }
 
-    long total_units = 0;
-    int entries = 0;
-    for (int i = 1; i < count; ++i) {
-        char fields[MAX_FIELDS][MAX_FIELD_LEN];
-        int field_count = parse_csv_fields(lines[i], fields, MAX_FIELDS);
-        if (field_count < 3) {
-            continue;
+    printf("\n========================================\n");
+    printf("         CUSTOMER FEEDBACK\n");
+    printf("========================================\n");
+    printf("%-5s %-10s %-8s %-30s\n", "ID", "Item ID", "Rating", "Comment");
+    printf("----------------------------------------\n");
+
+    for (int i = 0; i < feedback_count; i++)
+    {
+        printf("%-5d %-10d %-8d %-30s\n",
+               feedbacks[i].id,
+               feedbacks[i].item_id,
+               feedbacks[i].rating,
+               feedbacks[i].comment);
+    }
+    printf("========================================\n");
+}
+
+// Give feedback (Client)
+void giveFeedback()
+{
+    if (feedback_count >= MAX_FEEDBACK)
+    {
+        printf("\n[!] Feedback limit reached.\n");
+        return;
+    }
+
+    if (menu_count == 0)
+    {
+        printf("\n[!] No menu items available. Cannot give feedback.\n");
+        return;
+    }
+
+    int item_id, rating;
+    char comment[MAX_LEN];
+
+    printf("\n--- Give Your Feedback ---\n");
+
+    printf("Enter Item ID: ");
+    scanf("%d", &item_id);
+
+    int index = findMenuItem(item_id);
+    if (index == -1)
+    {
+        printf("[!] Invalid Item ID. Please check the menu.\n");
+        return;
+    }
+
+    printf("Enter Rating (1-5): ");
+    scanf("%d", &rating);
+
+    // Validate rating
+    if (rating < 1 || rating > 5)
+    {
+        printf("[!] Invalid rating. Please enter a value between 1 and 5.\n");
+        return;
+    }
+
+    printf("Enter Comment: ");
+    clearInputBuffer();
+    getInput(comment, MAX_LEN); // fgets to allow spaces in comments
+
+    // Save feedback
+    feedbacks[feedback_count].id = feedback_count + 1;
+    feedbacks[feedback_count].item_id = item_id;
+    feedbacks[feedback_count].rating = rating;
+    strcpy(feedbacks[feedback_count].comment, comment);
+
+    feedback_count++;
+
+    printf("[✓] Thank you for your feedback!\n");
+}
+
+// View financial report (Admin)
+void viewFinancialReport()
+{
+    printf("\n========================================\n");
+    printf("         FINANCIAL REPORT\n");
+    printf("========================================\n");
+
+    if (order_count == 0)
+    {
+        printf("Total Orders: 0\n");
+        printf("Total Revenue: Rs.0\n");
+    }
+    else
+    {
+        int completed_orders = 0;
+        int pending_orders = 0;
+        int cancelled_orders = 0;
+
+        for (int i = 0; i < order_count; i++)
+        {
+            if (strcmp(orders[i].status, "Completed") == 0)
+            {
+                completed_orders++;
+            }
+            else if (strcmp(orders[i].status, "Cancelled") == 0)
+            {
+                cancelled_orders++;
+            }
+            else
+            {
+                pending_orders++;
+            }
         }
-        int amount = 0;
-        if (parse_int(fields[2], &amount) == 0) {
-            total_units += amount;
-            entries++;
-        }
+
+        printf("Total Orders: %d\n", order_count);
+        printf("Completed Orders: %d\n", completed_orders);
+        printf("Pending Orders: %d\n", pending_orders);
+        printf("Cancelled Orders: %d\n", cancelled_orders);
+        printf("\nTotal Revenue: Rs.%d\n", financial_total);
     }
 
-    printf("\n--- Financial Summary ---\n");
-    printf("Recorded entries: %d\n", entries);
-    printf("Total revenue (units): %ld\n", total_units);
-    pause_and_wait();
+    printf("========================================\n");
 }
 
-static void admin_view_feedback(void) {
-    FeedbackRecord feedback[MAX_FEEDBACK];
-    int count = 0;
-    if (load_feedback(feedback, &count) != 0 || count == 0) {
-        printf("No feedback available.\n");
-        pause_and_wait();
+// Save feedback to file
+void saveFeedbackToFile()
+{
+    FILE *file = fopen("feedback.txt", "w");
+    if (file == NULL)
+    {
         return;
     }
 
-    int total_rating = 0;
-    int rated_entries = 0;
-    for (int i = 0; i < count; ++i) {
-        total_rating += feedback[i].rating;
-        if (feedback[i].rating > 0) {
-            rated_entries++;
-        }
+    fprintf(file, "%d\n", feedback_count);
+    for (int i = 0; i < feedback_count; i++)
+    {
+        fprintf(file, "%d|%d|%d|%s\n",
+                feedbacks[i].id, feedbacks[i].item_id,
+                feedbacks[i].rating, feedbacks[i].comment);
     }
 
-    double average = 0.0;
-    if (rated_entries > 0) {
-        average = (double)total_rating / (double)rated_entries;
-    }
-
-    printf("\n--- Feedback Overview ---\n");
-    printf("Entries: %d\n", count);
-    printf("Average rating: %.2f\n", average);
-    print_feedback(feedback, count);
-    pause_and_wait();
+    fclose(file);
 }
 
-static void client_view_menu(void) {
-    MenuItem items[MAX_MENU_ITEMS];
-    int count = 0;
-    if (load_menu_items(items, &count) != 0 || count == 0) {
-        printf("Menu is empty.\n");
-    } else {
-        print_menu_items(items, count);
-    }
-    pause_and_wait();
-}
-
-static void client_place_order(void) {
-    MenuItem menu[MAX_MENU_ITEMS];
-    int menu_count = 0;
-    if (load_menu_items(menu, &menu_count) != 0 || menu_count == 0) {
-        printf("Menu not available.\n");
-        pause_and_wait();
-        return;
-    }
-    print_menu_items(menu, menu_count);
-
-    OrderRecord orders[MAX_ORDERS];
-    int order_count = 0;
-    load_orders(orders, &order_count);
-
-    OrderRecord order;
-    generate_id("O", order_count + 1, order.id, sizeof(order.id));
-    printf("Enter menu item ID: ");
-    safe_input(order.item_id, sizeof(order.item_id));
-    int menu_index = find_menu_index_by_id(menu, menu_count, order.item_id);
-    if (menu_index < 0) {
-        printf("Invalid menu item.\n");
-        pause_and_wait();
+// Load feedback from file
+void loadFeedbackFromFile()
+{
+    FILE *file = fopen("feedback.txt", "r");
+    if (file == NULL)
+    {
         return;
     }
 
-    collect_quantity_input(&order.quantity);
-    printf("Enter your name: ");
-    safe_input(order.customer, sizeof(order.customer));
-    strncpy(order.status, "Pending", sizeof(order.status) - 1);
-    order.status[sizeof(order.status) - 1] = '\0';
-    order.total_cents = menu[menu_index].price_cents * order.quantity;
-
-    orders[order_count] = order;
-    if (save_orders(orders, order_count + 1) == 0) {
-        printf("Order placed successfully. ID: %s\n", order.id);
-    } else {
-        printf("Failed to save order.\n");
+    fscanf(file, "%d\n", &feedback_count);
+    for (int i = 0; i < feedback_count; i++)
+    {
+        fscanf(file, "%d|%d|%d|%[^\n]\n",
+               &feedbacks[i].id, &feedbacks[i].item_id,
+               &feedbacks[i].rating, feedbacks[i].comment);
     }
-    pause_and_wait();
+
+    fclose(file);
 }
 
-static void client_track_order(void) {
-    OrderRecord orders[MAX_ORDERS];
-    int count = 0;
-    if (load_orders(orders, &count) != 0 || count == 0) {
-        printf("No orders found.\n");
-        pause_and_wait();
-        return;
-    }
-    printf("Enter your order ID: ");
-    char id[16];
-    safe_input(id, sizeof(id));
-    int index = find_order_index_by_id(orders, count, id);
-    if (index < 0) {
-        printf("Order not found.\n");
-    } else {
-        printf("Order %s status: %s\n", orders[index].id, orders[index].status);
-    }
-    pause_and_wait();
-}
-
-static void client_update_order_status(void) {
-    OrderRecord orders[MAX_ORDERS];
-    int count = 0;
-    if (load_orders(orders, &count) != 0 || count == 0) {
-        printf("No orders available.\n");
-        pause_and_wait();
+// Save financial data
+void saveFinancialToFile()
+{
+    FILE *file = fopen("financial.txt", "w");
+    if (file == NULL)
+    {
         return;
     }
 
-    printf("Enter order ID: ");
-    char id[16];
-    safe_input(id, sizeof(id));
-    int index = find_order_index_by_id(orders, count, id);
-    if (index < 0) {
-        printf("Order not found.\n");
-        pause_and_wait();
+    fprintf(file, "%d\n", financial_total);
+    fclose(file);
+}
+
+// Load financial data
+void loadFinancialFromFile()
+{
+    FILE *file = fopen("financial.txt", "r");
+    if (file == NULL)
+    {
         return;
     }
 
-    printf("1. Mark as Completed\n");
-    printf("2. Cancel Order\n");
-    printf("Choose an option: ");
-    char input[16];
-    safe_input(input, sizeof(input));
-    int choice = 0;
-    if (parse_int(input, &choice) != 0) {
-        printf("Invalid selection.\n");
-        pause_and_wait();
-        return;
-    }
-
-    if (choice == 1) {
-        strncpy(orders[index].status, "Completed", sizeof(orders[index].status) - 1);
-        orders[index].status[sizeof(orders[index].status) - 1] = '\0';
-        update_financials_on_completion(&orders[index]);
-    } else if (choice == 2) {
-        strncpy(orders[index].status, "Cancelled", sizeof(orders[index].status) - 1);
-        orders[index].status[sizeof(orders[index].status) - 1] = '\0';
-    } else {
-        printf("Unknown option.\n");
-        pause_and_wait();
-        return;
-    }
-
-    if (save_orders(orders, count) == 0) {
-        printf("Order status updated.\n");
-    } else {
-        printf("Failed to update order.\n");
-    }
-    pause_and_wait();
+    fscanf(file, "%d", &financial_total);
+    fclose(file);
 }
 
-static void client_leave_feedback(void) {
-    FeedbackRecord entries[MAX_FEEDBACK];
-    int count = 0;
-    load_feedback(entries, &count);
+// ========================================================================
+// ADMIN & CLIENT PANEL HANDLERS
+// ========================================================================
 
-    FeedbackRecord entry;
-    generate_id("F", count + 1, entry.id, sizeof(entry.id));
+// Admin authentication
+int adminLogin()
+{
+    char password[MAX_LEN];
 
-    printf("Enter item ID (leave blank for overall feedback): ");
-    safe_input(entry.item_id, sizeof(entry.item_id));
+    printf("\n--- Admin Login ---\n");
+    printf("Enter Password: ");
+    clearInputBuffer();
+    getInput(password, MAX_LEN);
 
-    char input[16];
-    int rating = 0;
-    do {
-        printf("Enter rating (1-5): ");
-        safe_input(input, sizeof(input));
-    } while (parse_int(input, &rating) != 0 || rating < 1 || rating > 5);
-    entry.rating = rating;
-
-    printf("Enter comment (optional): ");
-    safe_input(entry.comment, sizeof(entry.comment));
-
-    char line[MAX_LINE_LEN];
-    snprintf(line, sizeof(line), "%s,%s,%d,%s", entry.id, entry.item_id, entry.rating, entry.comment);
-    if (append_csv_line(FEEDBACK_FILE, line) == 0) {
-        printf("Thank you for your feedback!\n");
-    } else {
-        printf("Failed to record feedback.\n");
-    }
-    pause_and_wait();
-}
-
-static void pause_and_wait(void) {
-    char temp[4];
-    printf("Press Enter to continue...");
-    safe_input(temp, sizeof(temp));
-}
-
-static int load_menu_items(MenuItem *items, int *count) {
-    char lines[MAX_MENU_ITEMS + 1][MAX_LINE_LEN];
-    int line_count = read_csv_lines(MENU_FILE, lines, MAX_MENU_ITEMS + 1);
-    if (line_count < 0) {
-        *count = 0;
-        return -1;
-    }
-
-    int idx = 0;
-    for (int i = 1; i < line_count && idx < MAX_MENU_ITEMS; ++i) {
-        char fields[MAX_FIELDS][MAX_FIELD_LEN];
-        int field_count = parse_csv_fields(lines[i], fields, MAX_FIELDS);
-        if (field_count < 4) {
-            continue;
-        }
-        MenuItem item;
-        strncpy(item.id, fields[0], sizeof(item.id) - 1);
-        item.id[sizeof(item.id) - 1] = '\0';
-        strncpy(item.name, fields[1], sizeof(item.name) - 1);
-        item.name[sizeof(item.name) - 1] = '\0';
-        strncpy(item.category, fields[2], sizeof(item.category) - 1);
-        item.category[sizeof(item.category) - 1] = '\0';
-        parse_int(fields[3], &item.price_cents);
-        items[idx++] = item;
-    }
-    *count = idx;
-    return 0;
-}
-
-static int save_menu_items(const MenuItem *items, int count) {
-    char lines[MAX_MENU_ITEMS + 1][MAX_LINE_LEN];
-    snprintf(lines[0], MAX_LINE_LEN, "MenuID,Name,Category,PriceUnits");
-    for (int i = 0; i < count; ++i) {
-        snprintf(lines[i + 1], MAX_LINE_LEN, "%s,%s,%s,%d", items[i].id, items[i].name, items[i].category, items[i].price_cents);
-    }
-    return write_csv_lines(MENU_FILE, lines, count + 1);
-}
-
-static void print_menu_items(const MenuItem *items, int count) {
-    printf("\n%-8s | %-20s | %-12s | Price\n", "ID", "Name", "Category");
-    printf("-----------------------------------------------\n");
-    for (int i = 0; i < count; ++i) {
-        printf("%-8s | %-20s | %-12s | %d\n", items[i].id, items[i].name, items[i].category, items[i].price_cents);
-    }
-}
-
-static int find_menu_index_by_id(const MenuItem *items, int count, const char *id) {
-    for (int i = 0; i < count; ++i) {
-        if (strcmp(items[i].id, id) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-static int load_orders(OrderRecord *orders, int *count) {
-    char lines[MAX_ORDERS + 1][MAX_LINE_LEN];
-    int line_count = read_csv_lines(ORDERS_FILE, lines, MAX_ORDERS + 1);
-    if (line_count < 0) {
-        *count = 0;
-        return -1;
-    }
-
-    int idx = 0;
-    for (int i = 1; i < line_count && idx < MAX_ORDERS; ++i) {
-        char fields[MAX_FIELDS][MAX_FIELD_LEN];
-        int field_count = parse_csv_fields(lines[i], fields, MAX_FIELDS);
-        if (field_count < 6) {
-            continue;
-        }
-        OrderRecord order;
-        strncpy(order.id, fields[0], sizeof(order.id) - 1);
-        order.id[sizeof(order.id) - 1] = '\0';
-        strncpy(order.item_id, fields[1], sizeof(order.item_id) - 1);
-        order.item_id[sizeof(order.item_id) - 1] = '\0';
-        parse_int(fields[2], &order.quantity);
-        strncpy(order.status, fields[3], sizeof(order.status) - 1);
-        order.status[sizeof(order.status) - 1] = '\0';
-        strncpy(order.customer, fields[4], sizeof(order.customer) - 1);
-        order.customer[sizeof(order.customer) - 1] = '\0';
-        parse_int(fields[5], &order.total_cents);
-        orders[idx++] = order;
-    }
-    *count = idx;
-    return 0;
-}
-
-static int save_orders(const OrderRecord *orders, int count) {
-    char lines[MAX_ORDERS + 1][MAX_LINE_LEN];
-    snprintf(lines[0], MAX_LINE_LEN, "OrderID,ItemID,Quantity,Status,Customer,TotalUnits");
-    for (int i = 0; i < count; ++i) {
-        snprintf(lines[i + 1], MAX_LINE_LEN, "%s,%s,%d,%s,%s,%d", orders[i].id, orders[i].item_id, orders[i].quantity, orders[i].status, orders[i].customer, orders[i].total_cents);
-    }
-    return write_csv_lines(ORDERS_FILE, lines, count + 1);
-}
-
-static void print_orders(const OrderRecord *orders, int count) {
-    printf("\n%-8s | %-6s | Qty | %-10s | %-15s | Total\n", "OrderID", "ItemID", "Status", "Customer");
-    printf("---------------------------------------------------------------\n");
-    for (int i = 0; i < count; ++i) {
-        printf("%-8s | %-6s | %-3d | %-10s | %-15s | %d\n", orders[i].id, orders[i].item_id, orders[i].quantity, orders[i].status, orders[i].customer, orders[i].total_cents);
-    }
-}
-
-static int find_order_index_by_id(const OrderRecord *orders, int count, const char *id) {
-    for (int i = 0; i < count; ++i) {
-        if (strcmp(orders[i].id, id) == 0) {
-            return i;
-        }
-    }
-    return -1;
-}
-
-static int load_feedback(FeedbackRecord *entries, int *count) {
-    char lines[MAX_FEEDBACK + 1][MAX_LINE_LEN];
-    int line_count = read_csv_lines(FEEDBACK_FILE, lines, MAX_FEEDBACK + 1);
-    if (line_count < 0) {
-        *count = 0;
-        return -1;
-    }
-
-    int idx = 0;
-    for (int i = 1; i < line_count && idx < MAX_FEEDBACK; ++i) {
-        char fields[MAX_FIELDS][MAX_FIELD_LEN];
-        int field_count = parse_csv_fields(lines[i], fields, MAX_FIELDS);
-        if (field_count < 4) {
-            continue;
-        }
-        FeedbackRecord entry;
-        strncpy(entry.id, fields[0], sizeof(entry.id) - 1);
-        entry.id[sizeof(entry.id) - 1] = '\0';
-        strncpy(entry.item_id, fields[1], sizeof(entry.item_id) - 1);
-        entry.item_id[sizeof(entry.item_id) - 1] = '\0';
-        parse_int(fields[2], &entry.rating);
-        strncpy(entry.comment, fields[3], sizeof(entry.comment) - 1);
-        entry.comment[sizeof(entry.comment) - 1] = '\0';
-        entries[idx++] = entry;
-    }
-    *count = idx;
-    return 0;
-}
-
-static void print_feedback(const FeedbackRecord *entries, int count) {
-    printf("\n%-8s | %-6s | Rating | Comment\n", "FeedID", "ItemID");
-    printf("-------------------------------------------------------------\n");
-    for (int i = 0; i < count; ++i) {
-        printf("%-8s | %-6s | %-6d | %s\n", entries[i].id, entries[i].item_id, entries[i].rating, entries[i].comment);
-    }
-}
-
-static void update_financials_on_completion(const OrderRecord *order) {
-    if (order == NULL) {
-        return;
-    }
-
-    int next_id = next_identifier_from_lines(FINANCIAL_FILE);
-    char entry_id[16];
-    generate_id("R", next_id, entry_id, sizeof(entry_id));
-
-    char line[MAX_LINE_LEN];
-    snprintf(line, sizeof(line), "%s,%s,%d", entry_id, order->id, order->total_cents);
-    append_csv_line(FINANCIAL_FILE, line);
-}
-
-static int next_identifier_from_lines(const char *filename) {
-    char lines[256][MAX_LINE_LEN];
-    int count = read_csv_lines(filename, lines, 256);
-    if (count < 0) {
+    if (strcmp(password, ADMIN_PASSWORD) == 0)
+    {
+        printf("[✓] Login successful!\n");
         return 1;
     }
-    return count;
+    else
+    {
+        printf("[!] Incorrect password. Access denied.\n");
+        return 0;
+    }
 }
 
-static void collect_price_input(int *price_cents) {
-    char input[32];
-    while (1) {
-        printf("Enter price (whole units): ");
-        safe_input(input, sizeof(input));
-        if (parse_int(input, price_cents) == 0 && *price_cents >= 0) {
+// Admin panel handler
+void adminPanel()
+{
+    if (!adminLogin())
+    {
+        return; // Exit if authentication fails
+    }
+
+    int choice;
+
+    while (1)
+    {
+        printAdminMenu();
+        scanf("%d", &choice);
+
+        if (choice == 0)
+        {
+            printf("Returning to main menu...\n");
             break;
         }
-        printf("Invalid price. Try again.\n");
+        else if (choice == 1)
+        {
+            viewMenu();
+        }
+        else if (choice == 2)
+        {
+            addMenuItem();
+        }
+        else if (choice == 3)
+        {
+            viewAllOrders();
+        }
+        else if (choice == 4)
+        {
+            updateOrderStatus();
+        }
+        else if (choice == 5)
+        {
+            viewFinancialReport();
+        }
+        else if (choice == 6)
+        {
+            viewAllFeedback();
+        }
+        else
+        {
+            printf("[!] Invalid choice. Please try again.\n");
+        }
     }
 }
 
-static void collect_quantity_input(int *quantity) {
-    char input[32];
-    while (1) {
-        printf("Enter quantity: ");
-        safe_input(input, sizeof(input));
-        if (parse_int(input, quantity) == 0 && *quantity > 0) {
+// Client panel handler
+void clientPanel()
+{
+    int choice;
+
+    while (1)
+    {
+        printClientMenu();
+        scanf("%d", &choice);
+
+        if (choice == 0)
+        {
+            printf("Returning to main menu...\n");
             break;
         }
-        printf("Invalid quantity. Try again.\n");
-    }
-}
-
-static int confirm_choice(const char *message) {
-    char input[8];
-    printf("%s", message);
-    safe_input(input, sizeof(input));
-    return (input[0] == 'y' || input[0] == 'Y');
-}
-
-static void admin_view(void) {
-    char input[16];
-    for (;;) {
-        printf("\n--- Admin Dashboard ---\n");
-        printf("1. Manage Menu\n");
-        printf("2. Manage Orders\n");
-        printf("3. View Financial Stats\n");
-        printf("4. View Feedback\n");
-        printf("0. Back\n");
-        printf("Choose an option: ");
-        safe_input(input, sizeof(input));
-        int choice = 0;
-        if (parse_int(input, &choice) != 0) {
-            printf("Invalid selection.\n");
-            continue;
+        else if (choice == 1)
+        {
+            viewMenu();
         }
-
-        if (choice == 0) {
-            return;
+        else if (choice == 2)
+        {
+            placeOrder();
         }
-        if (choice == 1) {
-            admin_manage_menu();
-        } else if (choice == 2) {
-            admin_manage_orders();
-        } else if (choice == 3) {
-            admin_view_financials();
-        } else if (choice == 4) {
-            admin_view_feedback();
-        } else {
-            printf("Unknown option.\n");
+        else if (choice == 3)
+        {
+            trackOrder();
+        }
+        else if (choice == 4)
+        {
+            clientUpdateOrder();
+        }
+        else if (choice == 5)
+        {
+            giveFeedback();
+        }
+        else
+        {
+            printf("[!] Invalid choice. Please try again.\n");
         }
     }
 }
 
-static void client_view(void) {
-    char input[16];
-    for (;;) {
-        printf("\n--- Client Dashboard ---\n");
-        printf("1. See Menu\n");
-        printf("2. Place Order\n");
-        printf("3. Track Order\n");
-        printf("4. Cancel/Complete Order\n");
-        printf("5. Give Feedback\n");
-        printf("0. Back\n");
-        printf("Choose an option: ");
-        safe_input(input, sizeof(input));
-        int choice = 0;
-        if (parse_int(input, &choice) != 0) {
-            printf("Invalid selection.\n");
-            continue;
-        }
-
-        if (choice == 0) {
-            return;
-        }
-        if (choice == 1) {
-            client_view_menu();
-        } else if (choice == 2) {
-            client_place_order();
-        } else if (choice == 3) {
-            client_track_order();
-        } else if (choice == 4) {
-            client_update_order_status();
-        } else if (choice == 5) {
-            client_leave_feedback();
-        } else {
-            printf("Unknown option.\n");
-        }
-    }
+// Save all data to files
+void saveAllData()
+{
+    saveMenuToFile();
+    saveOrdersToFile();
+    saveFeedbackToFile();
+    saveFinancialToFile();
 }
 
+// Load all data from files
+void loadAllData()
+{
+    loadMenuFromFile();
+    loadOrdersFromFile();
+    loadFeedbackFromFile();
+    loadFinancialFromFile();
+}
 
+// ========================================================================
+// MAIN FUNCTION
+// ========================================================================
 
-int main(void) {
-    initialize_data_files();
+int main()
+{
+    int choice;
 
-    char input[16];
-    for (;;) {
-        printf("\n=== Restaurant Management System ===\n");
-        printf("1. Admin View\n");
-        printf("2. Client View\n");
-        printf("0. Exit\n");
-        printf("Choose an option: ");
-        safe_input(input, sizeof(input));
+    // Load existing data from files
+    loadAllData();
 
-        int choice = 0;
-        if (parse_int(input, &choice) != 0) {
-            printf("Invalid selection.\n");
-            continue;
-        }
+    printf("\n");
+    printf("*****************************************\n");
+    printf("*  WELCOME TO CP-RMS                   *\n");
+    printf("*  Restaurant Management System        *\n");
+    printf("*****************************************\n");
 
-        if (choice == 0) {
+    while (1)
+    {
+        printMainMenu();
+        scanf("%d", &choice);
+
+        if (choice == 0)
+        {
+            printf("\nSaving data...\n");
+            saveAllData();
+            printf("Thank you for using CP-RMS!\n");
             printf("Goodbye!\n");
             break;
         }
-        if (choice == 1) {
-            admin_view();
-        } else if (choice == 2) {
-            client_view();
-        } else {
-            printf("Unknown option.\n");
+        else if (choice == 1)
+        {
+            adminPanel();
+        }
+        else if (choice == 2)
+        {
+            clientPanel();
+        }
+        else
+        {
+            printf("[!] Invalid choice. Please enter 0, 1, or 2.\n");
         }
     }
 
     return 0;
 }
-
