@@ -21,8 +21,8 @@ struct Order
 {
     int id;
     int item_id;
-    int qty;
-    char status[MAX_LEN];
+    int qty; 
+    char status[MAX_LEN]; 
     char customer[MAX_LEN];
     int total;
 };
@@ -47,26 +47,38 @@ int feedback_count = 0;
 
 int financial_total = 0;
 
+
 // ========== UTILITY FUNCTIONS ==========
 void clearInputBuffer()
 {
-
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
 }
+/*
+ * Parameters: None
+ * Functionality: Clears the input buffer by reading and discarding all characters 
+ *                until a newline or EOF is encountered
+ * Return: void (no return value)
+ */
 
-// Simple fgets wrapper - reads input and removes newline
 void getInput(char *buffer, int size)
 {
     fgets(buffer, size, stdin);
-    buffer[strcspn(buffer, "\n")] = 0; // Remove newline character
+    buffer[strcspn(buffer, "\n")] = 0;
 }
+/*
+ * Parameters: 
+ *   - buffer: pointer to character array where input will be stored
+ *   - size: maximum number of characters to read (including null terminator)
+ * Functionality: Reads a line of input from stdin using fgets and removes the 
+ *                trailing newline character
+ * Return: void (no return value)
+ */
 
 // ========================================================================
 // MEMBER 1 (ANAS): MENU & INVENTORY MODULE
 // ========================================================================
 
-// Display main menu
 void printMainMenu()
 {
     printf("\n========================================\n");
@@ -78,8 +90,13 @@ void printMainMenu()
     printf("========================================\n");
     printf("Enter your choice: ");
 }
+/*
+ * Parameters: None
+ * Functionality: Displays the main menu interface with options for Admin Panel,
+ *                Client Panel, and Exit
+ * Return: void (no return value)
+ */
 
-// Display admin menu
 void printAdminMenu()
 {
     printf("\n========================================\n");
@@ -95,8 +112,13 @@ void printAdminMenu()
     printf("========================================\n");
     printf("Enter your choice: ");
 }
+/*
+ * Parameters: None
+ * Functionality: Displays the admin panel menu with options to manage menu items,
+ *                orders, financial reports, and customer feedback
+ * Return: void (no return value)
+ */
 
-// Display client menu
 void printClientMenu()
 {
     printf("\n========================================\n");
@@ -111,19 +133,25 @@ void printClientMenu()
     printf("========================================\n");
     printf("Enter your choice: ");
 }
+/*
+ * Parameters: None
+ * Functionality: Displays the client panel menu with options to view menu, 
+ *                place orders, track orders, update orders, and give feedback
+ * Return: void (no return value)
+ */
 
-// View all menu items
 void viewMenu()
 {
     if (menu_count == 0)
     {
-        printf("\n[!] No menu items available.\n");
+        printf("\n No menu items available.\n");
         return;
     }
 
     printf("\n========================================\n");
     printf("           MENU ITEMS\n");
     printf("========================================\n");
+
     printf("%-5s %-20s %-15s %-10s\n", "ID", "Name", "Category", "Price");
     printf("----------------------------------------\n");
 
@@ -137,13 +165,18 @@ void viewMenu()
     }
     printf("========================================\n");
 }
+/*
+ * Parameters: None
+ * Functionality: Displays all menu items in a formatted table showing ID, name,
+ *                category, and price. Shows a message if no items are available
+ * Return: void (no return value)
+ */
 
-// Add new menu item
 void addMenuItem()
 {
     if (menu_count >= MAX_MENU)
     {
-        printf("\n[!] Menu is full. Cannot add more items.\n");
+        printf("\n Menu is full. Cannot add more items.\n");
         return;
     }
 
@@ -155,7 +188,7 @@ void addMenuItem()
 
     printf("Enter item name: ");
     clearInputBuffer();
-    getInput(name, MAX_LEN); // fgets to allow spaces in names
+    getInput(name, MAX_LEN);
 
     printf("Enter category: ");
     getInput(category, MAX_LEN);
@@ -163,31 +196,34 @@ void addMenuItem()
     printf("Enter price (Rs): ");
     scanf("%d", &price);
 
-    // Validate price
     if (price <= 0)
     {
-        printf("[!] Invalid price. Please enter a positive value.\n");
+        printf(" Invalid price. Please enter a positive value.\n");
         return;
     }
 
-    // Add item to menu
     menu[menu_count].id = menu_count + 1;
     strcpy(menu[menu_count].name, name);
     strcpy(menu[menu_count].category, category);
     menu[menu_count].price = price;
-
     menu_count++;
 
-    printf("[✓] Menu item added successfully! Item ID: %d\n", menu_count);
+    printf("Menu item added successfully! Item ID: %d\n", menu_count);
 }
+/*
+ * Parameters: None (takes user input interactively)
+ * Functionality: Prompts admin to enter details for a new menu item (name, category, price),
+ *                validates the input, and adds the item to the menu array. Assigns a unique ID
+ *                and increments menu_count
+ * Return: void (no return value)
+ */
 
-// Save menu to file
 void saveMenuToFile()
 {
     FILE *file = fopen("menu.txt", "w");
     if (file == NULL)
     {
-        return; // Silently fail if file can't be opened
+        return;
     }
 
     fprintf(file, "%d\n", menu_count);
@@ -199,14 +235,19 @@ void saveMenuToFile()
 
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Saves all menu items to "menu.txt" file in pipe-delimited format.
+ *                First line contains menu_count, followed by each item's data
+ * Return: void (no return value)
+ */
 
-// Load menu from file
 void loadMenuFromFile()
 {
     FILE *file = fopen("menu.txt", "r");
     if (file == NULL)
     {
-        return; // No file exists yet
+        return;
     }
 
     fscanf(file, "%d\n", &menu_count);
@@ -218,17 +259,22 @@ void loadMenuFromFile()
 
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Loads menu items from "menu.txt" file into the menu array.
+ *                Reads menu_count first, then parses each pipe-delimited line
+ * Return: void (no return value)
+ */
 
 // ========================================================================
 // MEMBER 2 (NOMAN): ORDERS MODULE
 // ========================================================================
 
-// View all orders (Admin)
 void viewAllOrders()
 {
     if (order_count == 0)
     {
-        printf("\n[!] No orders placed yet.\n");
+        printf("\n No orders placed yet.\n");
         return;
     }
 
@@ -251,32 +297,42 @@ void viewAllOrders()
     }
     printf("========================================\n");
 }
+/*
+ * Parameters: None
+ * Functionality: Displays all orders in a formatted table showing order ID, item ID,
+ *                quantity, status, customer name, and total price
+ * Return: void (no return value)
+ */
 
-// Find menu item by ID
 int findMenuItem(int item_id)
 {
     for (int i = 0; i < menu_count; i++)
     {
         if (menu[i].id == item_id)
         {
-            return i; // Return index
+            return i;
         }
     }
-    return -1; // Not found
+    return -1;
 }
+/*
+ * Parameters: 
+ *   - item_id: integer representing the menu item ID to search for
+ * Functionality: Searches the menu array for an item with the given ID
+ * Return: integer - returns the array index if found, -1 if not found
+ */
 
-// Place new order (Client)
 void placeOrder()
 {
     if (order_count >= MAX_ORDERS)
     {
-        printf("\n[!] Order limit reached. Cannot place more orders.\n");
+        printf("\n Order limit reached. Cannot place more orders.\n");
         return;
     }
 
     if (menu_count == 0)
     {
-        printf("\n[!] No menu items available. Cannot place order.\n");
+        printf("\n No menu items available. Cannot place order.\n");
         return;
     }
 
@@ -291,25 +347,23 @@ void placeOrder()
     int index = findMenuItem(item_id);
     if (index == -1)
     {
-        printf("[!] Invalid Item ID. Please check the menu.\n");
+        printf(" Invalid Item ID. Please check the menu.\n");
         return;
     }
 
     printf("Enter Quantity: ");
     scanf("%d", &qty);
 
-    // Validate quantity
     if (qty <= 0)
     {
-        printf("[!] Invalid quantity. Please enter a positive number.\n");
+        printf(" Invalid quantity. Please enter a positive number.\n");
         return;
     }
 
     printf("Enter Customer Name: ");
     clearInputBuffer();
-    getInput(customer, MAX_LEN); // fgets to allow spaces in names
+    getInput(customer, MAX_LEN);
 
-    // Create order
     orders[order_count].id = order_count + 1;
     orders[order_count].item_id = item_id;
     orders[order_count].qty = qty;
@@ -317,19 +371,25 @@ void placeOrder()
     strcpy(orders[order_count].status, "Pending");
     orders[order_count].total = menu[index].price * qty;
 
-    printf("\n[✓] Order placed successfully!\n");
+    printf("\nOrder placed successfully!\n");
     printf("    Order ID: %d\n", orders[order_count].id);
     printf("    Total Amount: Rs.%d\n", orders[order_count].total);
 
     order_count++;
 }
+/*
+ * Parameters: None (takes user input interactively)
+ * Functionality: Allows a client to place a new order by entering item ID, quantity,
+ *                and customer name. Validates input, calculates total price, assigns
+ *                a unique order ID, sets initial status to "Pending", and increments order_count
+ * Return: void (no return value)
+ */
 
-// Track order status (Client)
 void trackOrder()
 {
     if (order_count == 0)
     {
-        printf("\n[!] No orders placed yet.\n");
+        printf("\n No orders placed yet.\n");
         return;
     }
 
@@ -359,16 +419,22 @@ void trackOrder()
 
     if (!found)
     {
-        printf("[!] Order not found. Please check your Order ID.\n");
+        printf(" Order not found. Please check your Order ID.\n");
     }
 }
+/*
+ * Parameters: None (takes user input interactively)
+ * Functionality: Allows a client to track their order by entering an order ID.
+ *                Searches for the order and displays its complete details including
+ *                status, customer, item, quantity, and total
+ * Return: void (no return value)
+ */
 
-// Update order status (Admin)
 void updateOrderStatus()
 {
     if (order_count == 0)
     {
-        printf("\n[!] No orders available to update.\n");
+        printf("\n No orders available to update.\n");
         return;
     }
 
@@ -391,13 +457,12 @@ void updateOrderStatus()
 
             strcpy(orders[i].status, status);
 
-            // Update financial if completed
             if (strcmp(status, "Completed") == 0)
             {
                 financial_total += orders[i].total;
             }
 
-            printf("[✓] Order status updated successfully!\n");
+            printf("Order status updated successfully!\n");
             found = 1;
             break;
         }
@@ -405,16 +470,22 @@ void updateOrderStatus()
 
     if (!found)
     {
-        printf("[!] Order not found. Please check the Order ID.\n");
+        printf(" Order not found. Please check the Order ID.\n");
     }
 }
+/*
+ * Parameters: None (takes user input interactively)
+ * Functionality: Allows admin to update an order's status by entering order ID and
+ *                new status. If status is set to "Completed", adds order total to
+ *                financial_total
+ * Return: void (no return value)
+ */
 
-// Update order by client
 void clientUpdateOrder()
 {
     if (order_count == 0)
     {
-        printf("\n[!] No orders available to update.\n");
+        printf("\n No orders available to update.\n");
         return;
     }
 
@@ -439,16 +510,16 @@ void clientUpdateOrder()
             {
                 strcpy(orders[i].status, "Completed");
                 financial_total += orders[i].total;
-                printf("[✓] Order marked as completed!\n");
+                printf("Order marked as completed!\n");
             }
             else if (action == 2)
             {
                 strcpy(orders[i].status, "Cancelled");
-                printf("[✓] Order cancelled successfully!\n");
+                printf("Order cancelled successfully!\n");
             }
             else
             {
-                printf("[!] Invalid action.\n");
+                printf(" Invalid action.\n");
             }
 
             found = 1;
@@ -458,11 +529,16 @@ void clientUpdateOrder()
 
     if (!found)
     {
-        printf("[!] Order not found. Please check your Order ID.\n");
+        printf(" Order not found. Please check your Order ID.\n");
     }
 }
+/*
+ * Parameters: None (takes user input interactively)
+ * Functionality: Allows a client to update their own order status. Provides two options:
+ *                mark as completed (adds to financial_total) or cancel the order
+ * Return: void (no return value)
+ */
 
-// Save orders to file
 void saveOrdersToFile()
 {
     FILE *file = fopen("orders.txt", "w");
@@ -481,8 +557,13 @@ void saveOrdersToFile()
 
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Saves all orders to "orders.txt" file in pipe-delimited format.
+ *                First line contains order_count, followed by each order's data
+ * Return: void (no return value)
+ */
 
-// Load orders from file
 void loadOrdersFromFile()
 {
     FILE *file = fopen("orders.txt", "r");
@@ -501,17 +582,22 @@ void loadOrdersFromFile()
 
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Loads orders from "orders.txt" file into the orders array.
+ *                Reads order_count first, then parses each pipe-delimited line
+ * Return: void (no return value)
+ */
 
 // ========================================================================
 // MEMBER 3 (ALI): FEEDBACK & FINANCIALS MODULE
 // ========================================================================
 
-// View all feedback (Admin)
 void viewAllFeedback()
 {
     if (feedback_count == 0)
     {
-        printf("\n[!] No feedback available.\n");
+        printf("\n No feedback available.\n");
         return;
     }
 
@@ -531,19 +617,24 @@ void viewAllFeedback()
     }
     printf("========================================\n");
 }
+/*
+ * Parameters: None
+ * Functionality: Displays all customer feedback in a formatted table showing feedback ID,
+ *                item ID, rating, and comment
+ * Return: void (no return value)
+ */
 
-// Give feedback (Client)
 void giveFeedback()
 {
     if (feedback_count >= MAX_FEEDBACK)
     {
-        printf("\n[!] Feedback limit reached.\n");
+        printf("\n Feedback limit reached.\n");
         return;
     }
 
     if (menu_count == 0)
     {
-        printf("\n[!] No menu items available. Cannot give feedback.\n");
+        printf("\n No menu items available. Cannot give feedback.\n");
         return;
     }
 
@@ -558,25 +649,23 @@ void giveFeedback()
     int index = findMenuItem(item_id);
     if (index == -1)
     {
-        printf("[!] Invalid Item ID. Please check the menu.\n");
+        printf(" Invalid Item ID. Please check the menu.\n");
         return;
     }
 
     printf("Enter Rating (1-5): ");
     scanf("%d", &rating);
 
-    // Validate rating
     if (rating < 1 || rating > 5)
     {
-        printf("[!] Invalid rating. Please enter a value between 1 and 5.\n");
+        printf(" Invalid rating. Please enter a value between 1 and 5.\n");
         return;
     }
 
     printf("Enter Comment: ");
     clearInputBuffer();
-    getInput(comment, MAX_LEN); // fgets to allow spaces in comments
+    getInput(comment, MAX_LEN);
 
-    // Save feedback
     feedbacks[feedback_count].id = feedback_count + 1;
     feedbacks[feedback_count].item_id = item_id;
     feedbacks[feedback_count].rating = rating;
@@ -584,10 +673,16 @@ void giveFeedback()
 
     feedback_count++;
 
-    printf("[✓] Thank you for your feedback!\n");
+    printf("Thank you for your feedback!\n");
 }
+/*
+ * Parameters: None (takes user input interactively)
+ * Functionality: Allows a client to give feedback on a menu item by entering item ID,
+ *                rating (1-5), and comment. Validates input, assigns a unique feedback ID,
+ *                and increments feedback_count
+ * Return: void (no return value)
+ */
 
-// View financial report (Admin)
 void viewFinancialReport()
 {
     printf("\n========================================\n");
@@ -630,8 +725,13 @@ void viewFinancialReport()
 
     printf("========================================\n");
 }
+/*
+ * Parameters: None
+ * Functionality: Displays a financial report showing total orders, breakdown by status
+ *                (completed, pending, cancelled), and total revenue from completed orders
+ * Return: void (no return value)
+ */
 
-// Save feedback to file
 void saveFeedbackToFile()
 {
     FILE *file = fopen("feedback.txt", "w");
@@ -650,8 +750,13 @@ void saveFeedbackToFile()
 
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Saves all feedback to "feedback.txt" file in pipe-delimited format.
+ *                First line contains feedback_count, followed by each feedback's data
+ * Return: void (no return value)
+ */
 
-// Load feedback from file
 void loadFeedbackFromFile()
 {
     FILE *file = fopen("feedback.txt", "r");
@@ -670,8 +775,13 @@ void loadFeedbackFromFile()
 
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Loads feedback from "feedback.txt" file into the feedbacks array.
+ *                Reads feedback_count first, then parses each pipe-delimited line
+ * Return: void (no return value)
+ */
 
-// Save financial data
 void saveFinancialToFile()
 {
     FILE *file = fopen("financial.txt", "w");
@@ -683,8 +793,12 @@ void saveFinancialToFile()
     fprintf(file, "%d\n", financial_total);
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Saves the financial_total (total revenue) to "financial.txt" file
+ * Return: void (no return value)
+ */
 
-// Load financial data
 void loadFinancialFromFile()
 {
     FILE *file = fopen("financial.txt", "r");
@@ -696,12 +810,16 @@ void loadFinancialFromFile()
     fscanf(file, "%d", &financial_total);
     fclose(file);
 }
+/*
+ * Parameters: None
+ * Functionality: Loads the financial_total (total revenue) from "financial.txt" file
+ * Return: void (no return value)
+ */
 
 // ========================================================================
 // ADMIN & CLIENT PANEL HANDLERS
 // ========================================================================
 
-// Admin authentication
 int adminLogin()
 {
     char password[MAX_LEN];
@@ -713,22 +831,27 @@ int adminLogin()
 
     if (strcmp(password, ADMIN_PASSWORD) == 0)
     {
-        printf("[✓] Login successful!\n");
+        printf("Login successful!\n");
         return 1;
     }
     else
     {
-        printf("[!] Incorrect password. Access denied.\n");
+        printf(" Incorrect password. Access denied.\n");
         return 0;
     }
 }
+/*
+ * Parameters: None (takes user input interactively)
+ * Functionality: Prompts for admin password and validates it against ADMIN_PASSWORD constant.
+ *                Displays success or failure message
+ * Return: integer - returns 1 if authentication successful, 0 if failed
+ */
 
-// Admin panel handler
 void adminPanel()
 {
     if (!adminLogin())
     {
-        return; // Exit if authentication fails
+        return;
     }
 
     int choice;
@@ -769,12 +892,18 @@ void adminPanel()
         }
         else
         {
-            printf("[!] Invalid choice. Please try again.\n");
+            printf(" Invalid choice. Please try again.\n");
         }
     }
 }
+/*
+ * Parameters: None
+ * Functionality: Handles the admin panel interface. First authenticates the admin,
+ *                then displays menu and processes admin choices in a loop until
+ *                user chooses to exit back to main menu
+ * Return: void (no return value)
+ */
 
-// Client panel handler
 void clientPanel()
 {
     int choice;
@@ -811,12 +940,17 @@ void clientPanel()
         }
         else
         {
-            printf("[!] Invalid choice. Please try again.\n");
+            printf(" Invalid choice. Please try again.\n");
         }
     }
 }
+/*
+ * Parameters: None
+ * Functionality: Handles the client panel interface. Displays menu and processes
+ *                client choices in a loop until user chooses to exit back to main menu
+ * Return: void (no return value)
+ */
 
-// Save all data to files
 void saveAllData()
 {
     saveMenuToFile();
@@ -824,8 +958,13 @@ void saveAllData()
     saveFeedbackToFile();
     saveFinancialToFile();
 }
+/*
+ * Parameters: None
+ * Functionality: Calls all save functions to persist menu, orders, feedback, and
+ *                financial data to their respective files
+ * Return: void (no return value)
+ */
 
-// Load all data from files
 void loadAllData()
 {
     loadMenuFromFile();
@@ -833,6 +972,12 @@ void loadAllData()
     loadFeedbackFromFile();
     loadFinancialFromFile();
 }
+/*
+ * Parameters: None
+ * Functionality: Calls all load functions to retrieve menu, orders, feedback, and
+ *                financial data from their respective files at program startup
+ * Return: void (no return value)
+ */
 
 // ========================================================================
 // MAIN FUNCTION
@@ -842,7 +987,6 @@ int main()
 {
     int choice;
 
-    // Load existing data from files
     loadAllData();
 
     printf("\n");
@@ -874,9 +1018,16 @@ int main()
         }
         else
         {
-            printf("[!] Invalid choice. Please enter 0, 1, or 2.\n");
+            printf(" Invalid choice. Please enter 0, 1, or 2.\n");
         }
     }
 
     return 0;
 }
+/*
+ * Parameters: None (standard main function)
+ * Functionality: Entry point of the program. Loads existing data from files, displays
+ *                welcome message, runs main menu loop allowing user to access admin or
+ *                client panels, and saves all data before exiting
+ * Return: integer - returns 0 to indicate successful program termination
+ */
